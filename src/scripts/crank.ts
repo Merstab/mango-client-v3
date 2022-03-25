@@ -20,7 +20,7 @@ import {
   DexInstructions,
   Market,
 } from '@project-serum/serum';
-import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { getOrCreateAssociatedTokenAccount } from '@solana/spl-token';
 
 // const interval = process.env.INTERVAL || 3500;
 const interval = 4000; // TODO - stop sharing env var with Keeper
@@ -70,28 +70,21 @@ async function run() {
     }),
   );
 
-  const quoteToken = new Token(
+  const quoteWallet = getOrCreateAssociatedTokenAccount(
     connection,
-    spotMarkets[0].quoteMintAddress,
-    TOKEN_PROGRAM_ID,
     payer,
-  );
-  const quoteWallet = await quoteToken
-    .getOrCreateAssociatedAccountInfo(payer.publicKey)
-    .then((a) => a.address);
+    spotMarkets[0].quoteMintAddress,
+    payer.publicKey,
+  ).then((a) => a.address);
 
   const baseWallets = await Promise.all(
     spotMarkets.map((m) => {
-      const token = new Token(
+      return getOrCreateAssociatedTokenAccount(
         connection,
-        m.baseMintAddress,
-        TOKEN_PROGRAM_ID,
         payer,
-      );
-
-      return token
-        .getOrCreateAssociatedAccountInfo(payer.publicKey)
-        .then((a) => a.address);
+        m.baseMintAddress,
+        payer.publicKey,
+      ).then((a) => a.address);
     }),
   );
 

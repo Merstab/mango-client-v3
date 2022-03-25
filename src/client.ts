@@ -128,8 +128,8 @@ import {
   WRAPPED_SOL_MINT,
 } from '@project-serum/serum/lib/token-instructions';
 import {
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-  Token,
+  createAssociatedTokenAccountInstruction,
+  getAssociatedTokenAddress,
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import MangoGroup from './MangoGroup';
@@ -1252,12 +1252,7 @@ export class MangoClient {
     const tokenIndex = mangoGroup.getRootBankIndex(rootBank);
     const tokenMint = mangoGroup.tokens[tokenIndex].mint;
 
-    let tokenAcc = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      tokenMint,
-      owner.publicKey,
-    );
+    let tokenAcc = await getAssociatedTokenAddress(tokenMint, owner.publicKey);
 
     let wrappedSolAccount: Account | null = null;
     if (tokenMint.equals(WRAPPED_SOL_MINT)) {
@@ -1289,13 +1284,11 @@ export class MangoClient {
       const tokenAccExists = await this.connection.getAccountInfo(tokenAcc);
       if (!tokenAccExists) {
         transaction.add(
-          Token.createAssociatedTokenAccountInstruction(
-            ASSOCIATED_TOKEN_PROGRAM_ID,
-            TOKEN_PROGRAM_ID,
-            tokenMint,
+          createAssociatedTokenAccountInstruction(
+            owner.publicKey,
             tokenAcc,
             owner.publicKey,
-            owner.publicKey,
+            tokenMint,
           ),
         );
       }
@@ -1358,9 +1351,7 @@ export class MangoClient {
         const tokenMint = mangoGroup.tokens[tokenIndex].mint;
         // const decimals = mangoGroup.tokens[tokenIndex].decimals;
         if (mangoAccount.deposits[tokenIndex].isPos()) {
-          let tokenAcc = await Token.getAssociatedTokenAddress(
-            ASSOCIATED_TOKEN_PROGRAM_ID,
-            TOKEN_PROGRAM_ID,
+          let tokenAcc = await getAssociatedTokenAddress(
             tokenMint,
             owner.publicKey,
           );
@@ -1399,13 +1390,11 @@ export class MangoClient {
             );
             if (!tokenAccExists) {
               transactionAndSigners.transaction.add(
-                Token.createAssociatedTokenAccountInstruction(
-                  ASSOCIATED_TOKEN_PROGRAM_ID,
-                  TOKEN_PROGRAM_ID,
-                  tokenMint,
+                createAssociatedTokenAccountInstruction(
+                  owner.publicKey,
                   tokenAcc,
                   owner.publicKey,
-                  owner.publicKey,
+                  tokenMint,
                 ),
               );
             }
@@ -4703,9 +4692,7 @@ export class MangoClient {
             transaction: new Transaction(),
             signers: [],
           };
-          let tokenAcc = await Token.getAssociatedTokenAddress(
-            ASSOCIATED_TOKEN_PROGRAM_ID,
-            TOKEN_PROGRAM_ID,
+          let tokenAcc = await getAssociatedTokenAddress(
             tokenMint,
             payer.publicKey,
           );
@@ -4744,13 +4731,11 @@ export class MangoClient {
             );
             if (!tokenAccExists) {
               withdrawTransaction.transaction.add(
-                Token.createAssociatedTokenAccountInstruction(
-                  ASSOCIATED_TOKEN_PROGRAM_ID,
-                  TOKEN_PROGRAM_ID,
-                  tokenMint,
+                createAssociatedTokenAccountInstruction(
+                  payer.publicKey,
                   tokenAcc,
                   payer.publicKey,
-                  payer.publicKey,
+                  tokenMint,
                 ),
               );
             }

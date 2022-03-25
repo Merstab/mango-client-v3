@@ -1,8 +1,7 @@
-import { createDevnetConnection } from '../../test/utils';
-import { Account, PublicKey } from '@solana/web3.js';
+import { Account, Connection, PublicKey } from '@solana/web3.js';
 import fs from 'fs';
 import os from 'os';
-import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { getOrCreateAssociatedTokenAccount, mintTo } from '@solana/spl-token';
 
 const FIXED_IDS = [
   {
@@ -172,7 +171,7 @@ const FIXED_IDS = [
   },
 ];
 
-const connection = createDevnetConnection();
+const connection = new Connection('');
 
 const authorityFp =
   process.env.AUTHORITY || os.homedir() + '/.config/solana/devnet.json';
@@ -194,23 +193,23 @@ async function mintDevnetTokens() {
   );
 
   for (let i = 0; i < FIXED_IDS.length; i++) {
-    const token = new Token(
-      connection,
-      new PublicKey(FIXED_IDS[i].mint),
-      TOKEN_PROGRAM_ID,
-      authority,
-    );
-
     if (FIXED_IDS[i].symbol === 'SOL') {
       console.log('not minting tokens for SOL');
       continue;
     }
 
-    const tokenAccount = await token.getOrCreateAssociatedAccountInfo(wallet);
-    await token.mintTo(
-      tokenAccount.address,
+    const tokenAccount = await getOrCreateAssociatedTokenAccount(
+      connection,
       authority,
-      [],
+      new PublicKey(FIXED_IDS[i].mint),
+      wallet,
+    );
+    await mintTo(
+      connection,
+      authority,
+      new PublicKey(FIXED_IDS[i].mint),
+      tokenAccount.address,
+      wallet,
       1_000_000_000_000_000,
     );
     console.log('minted', FIXED_IDS[i].symbol);
